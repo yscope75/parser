@@ -20,7 +20,8 @@ from torch.optim import Adam, Optimizer
 from torch.optim.lr_scheduler import ExponentialLR, _LRScheduler
 
 import supar
-from supar.utils import Config, Dataset
+from supar.config import Config
+from supar.utils import Dataset
 from supar.utils.field import Field
 from supar.utils.fn import download, get_rng_state, set_rng_state
 from supar.utils.logging import get_logger, init_logger, progress_bar
@@ -42,6 +43,12 @@ class Parser(object):
         self.args = args
         self.model = model
         self.transform = transform
+
+    def __repr__(self):
+        s = f'{self.__class__.__name__}(\n'
+        s += '\n'.join(['  '+i for i in str(self.model).split('\n')]) + '\n'
+        s += '\n'.join(['  '+i for i in str(self.transform).split('\n')]) + '\n)'
+        return s
 
     @property
     def device(self):
@@ -134,28 +141,35 @@ class Parser(object):
         if args.cache:
             args.bin = os.path.join(os.path.dirname(args.path), 'bin')
         args.even = args.get('even', is_dist())
-        train = Dataset(self.transform, args.train, **args).build(batch_size=batch_size,
-                                                                  n_buckets=buckets,
-                                                                  shuffle=True,
-                                                                  distributed=is_dist(),
-                                                                  even=args.even,
-                                                                  n_workers=workers)
-        dev = Dataset(self.transform, args.dev, **args).build(batch_size=eval_batch_size,
-                                                              n_buckets=buckets,
-                                                              shuffle=False,
-                                                              distributed=is_dist(),
-                                                              even=False,
-                                                              n_workers=workers)
+        train = Dataset(self.transform, args.train, **args).build(
+            batch_size=batch_size,
+            n_buckets=buckets,
+            shuffle=True,
+            distributed=is_dist(),
+            even=args.even,
+            seed=args.seed,
+            n_workers=workers
+        )
+        dev = Dataset(self.transform, args.dev, **args).build(
+            batch_size=eval_batch_size,
+            n_buckets=buckets,
+            shuffle=False,
+            distributed=is_dist(),
+            even=False,
+            n_workers=workers
+        )
         logger.info(f"{'train:':6} {train}")
         if not args.test:
             logger.info(f"{'dev:':6} {dev}\n")
         else:
-            test = Dataset(self.transform, args.test, **args).build(batch_size=eval_batch_size,
-                                                                    n_buckets=buckets,
-                                                                    shuffle=False,
-                                                                    distributed=is_dist(),
-                                                                    even=False,
-                                                                    n_workers=workers)
+            test = Dataset(self.transform, args.test, **args).build(
+                batch_size=eval_batch_size,
+                n_buckets=buckets,
+                shuffle=False,
+                distributed=is_dist(),
+                even=False,
+                n_workers=workers
+            )
             logger.info(f"{'dev:':6} {dev}")
             logger.info(f"{'test:':6} {test}\n")
         loader, sampler = train.loader, train.loader.batch_sampler
@@ -306,7 +320,7 @@ class Parser(object):
         self.transform.train()
         logger.info("Loading the data")
         if args.cache:
-            args.bin = os.path.join(os.path.dirname(args.path), 'bin')
+            args.bin = args.get('bin', os.path.join(os.path.dirname(args.path), 'bin'))
         if is_dist():
             batch_size = batch_size // dist.get_world_size()
         data = Dataset(self.transform, **args)
@@ -529,7 +543,7 @@ class Parser(object):
         Args:
             path (str):
                 - a string with the shortcut name of a pretrained model defined in ``supar.MODEL``
-                  to load from cache or download, e.g., ``'biaffine-dep-en'``.
+                  to load from cache or download, e.g., ``'dep-biaffine-en'``.
                 - a local path to a pretrained model, e.g., ``./<path>/model``.
             reload (bool):
                 Whether to discard the existing cache and force a fresh download. Default: ``False``.
@@ -543,7 +557,7 @@ class Parser(object):
 
         Examples:
             >>> from supar import Parser
-            >>> parser = Parser.load('biaffine-dep-en')
+            >>> parser = Parser.load('dep-biaffine-en')
             >>> parser = Parser.load('./ptb.biaffine.dep.lstm.char')
         """
 

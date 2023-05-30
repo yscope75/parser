@@ -8,7 +8,7 @@ setup(
     author='Yu Zhang',
     author_email='yzhang.cs@outlook.com',
     license='MIT',
-    description='Syntactic/Semantic Parsing Models',
+    description='State-of-the-art parsers for natural language',
     long_description=open('README.md', 'r').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/yzhangcs/parser',
@@ -32,20 +32,23 @@ setup(
         'stanza',
         'omegaconf',
         'dill',
-        'pathos'],
+        'pathos',
+        'opt_einsum'
+    ],
     extras_require={
         'elmo': ['allennlp'],
         'bpe': ['subword-nmt']
     },
     entry_points={
         'console_scripts': [
-            'biaffine-dep=supar.cmds.dep.biaffine:main',
-            'crf-dep=supar.cmds.dep.crf:main',
-            'crf2o-dep=supar.cmds.dep.crf2o:main',
-            'aj-con=supar.cmds.con.aj:main',
-            'crf-con=supar.cmds.con.crf:main',
-            'biaffine-sdp=supar.cmds.sdp.biaffine:main',
-            'vi-sdp=supar.cmds.sdp.vi:main'
+            'dep-biaffine=supar.cmds.dep.biaffine:main',
+            'dep-crf=supar.cmds.dep.crf:main',
+            'dep-crf2o=supar.cmds.dep.crf2o:main',
+            'con-aj=supar.cmds.const.aj:main',
+            'con-crf=supar.cmds.const.crf:main',
+            'con-tt=supar.cmds.const.tt:main',
+            'sdp-biaffine=supar.cmds.sdp.biaffine:main',
+            'sdp-vi=supar.cmds.sdp.vi:main'
         ]
     },
     python_requires='>=3.7',
