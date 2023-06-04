@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .affine import Biaffine, Triaffine
+from .affine import Biaffine, Triaffine, BiaffineWithAttention
 from .dropout import IndependentDropout, SharedDropout, TokenDropout
 from .gnn import GraphConvolutionalNetwork
 from .lstm import CharLSTM, VariationalLSTM
@@ -11,6 +11,7 @@ from .transformer import (TransformerDecoder, TransformerEncoder,
 
 __all__ = [
     'Biaffine',
+    'BiaffineWithAttention',
     'Triaffine',
     'IndependentDropout',
     'SharedDropout',
