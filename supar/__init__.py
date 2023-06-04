@@ -2,6 +2,7 @@
 
 from .models import (AttachJuxtaposeConstituencyParser,
                      BiaffineDependencyParser,
+                     BiaffineDepParserWRelations,
                      BiaffineSemanticDependencyParser, CRF2oDependencyParser,
                      CRFConstituencyParser, CRFDependencyParser,
                      TetraTaggingConstituencyParser, VIConstituencyParser,
@@ -16,6 +17,7 @@ from .structs import (BiLexicalizedConstituencyCRF, ConstituencyCRF,
 __all__ = [
     'Parser',
     'BiaffineDependencyParser',
+    'BiaffineDepParserWRelations',
     'CRFDependencyParser',
     'CRF2oDependencyParser',
     'VIDependencyParser',

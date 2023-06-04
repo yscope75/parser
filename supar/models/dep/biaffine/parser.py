@@ -5,7 +5,7 @@ from typing import Iterable, Union
 
 import torch
 from supar.config import Config
-from supar.models.dep.biaffine.model import BiaffineDependencyModel
+from supar.models.dep.biaffine.model import BiaffineDependencyModel, BiaffineDependencyWAttentionsModel
 from supar.models.dep.biaffine.transform import CoNLL
 from supar.parser import Parser
 from supar.utils import Dataset, Embedding
@@ -211,3 +211,6 @@ class BiaffineDependencyParser(Parser):
         parser = cls(args, model, transform)
         parser.model.to(parser.device)
         return parser
+
+class BiaffineDepParserWRelations(BiaffineDependencyParser):
+    MODEL = BiaffineDependencyWAttentionsModel
