@@ -3,10 +3,12 @@
 from .const import (AttachJuxtaposeConstituencyParser, CRFConstituencyParser,
                     TetraTaggingConstituencyParser, VIConstituencyParser)
 from .dep import (BiaffineDependencyParser, CRF2oDependencyParser,
-                  CRFDependencyParser, VIDependencyParser)
+                  CRFDependencyParser, VIDependencyParser,
+                  BiaffineDepParserWRelations)
 from .sdp import BiaffineSemanticDependencyParser, VISemanticDependencyParser
 
 __all__ = ['BiaffineDependencyParser',
+           'BiaffineDepParserWRelations',
            'CRFDependencyParser',
            'CRF2oDependencyParser',
            'VIDependencyParser',
