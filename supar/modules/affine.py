@@ -130,7 +130,7 @@ class Biaffine(nn.Module):
             s = torch.einsum('bxi,oij,byj->boxy', x, self.weight, y)
         return s.squeeze(1) / self.n_in ** self.scale
 
-class BiaffineWithAttention(Biaffine):
+class BiaffineWithAttention(nn.Module):
     r"""
     Biaffine layer with bert attentions enhanced 
     Biaffine layer for first-order scoring :cite:`dozat-eta-2017-biaffine`.
@@ -163,10 +163,63 @@ class BiaffineWithAttention(Biaffine):
 
     def __init__(
         self,
+        n_in: int,
+        n_out: int = 1,
+        n_proj: Optional[int] = None,
+        dropout: Optional[float] = 0,
+        scale: int = 0,
+        bias_x: bool = True,
+        bias_y: bool = True,
+        decompose: bool = False,
+        init: Callable = nn.init.zeros_
     ) -> Biaffine:
         super().__init__()
 
-        self.attention_weights = nn.Parameter(torch.Tensor(self.n_out, )) 
+        self.n_in = n_in
+        self.n_out = n_out
+        self.n_proj = n_proj
+        self.dropout = dropout
+        self.scale = scale
+        self.bias_x = bias_x
+        self.bias_y = bias_y
+        self.decompose = decompose
+        self.init = init
+
+        if n_proj is not None:
+            self.mlp_x, self.mlp_y = MLP(n_in, n_proj, dropout), MLP(n_in, n_proj, dropout)
+        self.n_model = n_proj or n_in
+        if not decompose:
+            self.weight = nn.Parameter(torch.Tensor(n_out, self.n_model + bias_x, self.n_model + bias_y))
+        else:
+            self.weight = nn.ParameterList((nn.Parameter(torch.Tensor(n_out, self.n_model + bias_x)),
+                                            nn.Parameter(torch.Tensor(n_out, self.n_model + bias_y))))
+
+        self.reset_parameters()
+
+    def __repr__(self):
+        s = f"n_in={self.n_in}"
+        if self.n_out > 1:
+            s += f", n_out={self.n_out}"
+        if self.n_proj is not None:
+            s += f", n_proj={self.n_proj}"
+        if self.dropout > 0:
+            s += f", dropout={self.dropout}"
+        if self.scale != 0:
+            s += f", scale={self.scale}"
+        if self.bias_x:
+            s += f", bias_x={self.bias_x}"
+        if self.bias_y:
+            s += f", bias_y={self.bias_y}"
+        if self.decompose:
+            s += f", decompose={self.decompose}"
+        return f"{self.__class__.__name__}({s})"
+
+    def reset_parameters(self):
+        if self.decompose:
+            for i in self.weight:
+                self.init(i)
+        else:
+            self.init(self.weight)
 
     def forward(
         self,
