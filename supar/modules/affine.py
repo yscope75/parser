@@ -163,15 +163,6 @@ class BiaffineWithAttention(Biaffine):
 
     def __init__(
         self,
-        n_in: int,
-        n_out: int = 1,
-        n_proj: Optional[int] = None,
-        dropout: Optional[float] = 0,
-        scale: int = 0,
-        bias_x: bool = True,
-        bias_y: bool = True,
-        decompose: bool = False,
-        init: Callable = nn.init.zeros_
     ) -> Biaffine:
         super().__init__()
 
