@@ -360,7 +360,7 @@ class BiaffineDependencyWAttentionsModel(Model):
         self.head_for_attention = head_for_atten;
         self.hook_results = {}
         # register a hook for relations 
-        self.bert_embed.model.encoder.layer[atten_layer].self.register_forward_hook(self.relations_hook)
+        self.bert_embed.model.encoder.layer[atten_layer].attention.self.register_forward_hook(self.relations_hook)
         self.arc_mlp_d = MLP(n_in=self.args.n_encoder_hidden, n_out=n_arc_mlp, dropout=mlp_dropout)
         self.arc_mlp_h = MLP(n_in=self.args.n_encoder_hidden, n_out=n_arc_mlp, dropout=mlp_dropout)
         self.rel_mlp_d = MLP(n_in=self.args.n_encoder_hidden, n_out=n_rel_mlp, dropout=mlp_dropout)
