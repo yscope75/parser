@@ -44,9 +44,10 @@ class TransformerTokenizer:
         return self.vocab_size
 
     def __call__(self, text: str) -> List[str]:
-        from tokenizers.pre_tokenizers import ByteLevel
-        if isinstance(self.tokenizer.backend_tokenizer.pre_tokenizer, ByteLevel):
-            text = ' ' + text
+        if not 'phobert' in self.name:
+            from tokenizers.pre_tokenizers import ByteLevel
+            if isinstance(self.tokenizer.backend_tokenizer.pre_tokenizer, ByteLevel):
+                text = ' ' + text
         return tuple(i.strip() for i in self.tokenizer.tokenize(text))
 
     def __getattr__(self, name: str) -> Any:
