@@ -5,10 +5,9 @@ from .dropout import IndependentDropout, SharedDropout, TokenDropout
 from .gnn import GraphConvolutionalNetwork
 from .lstm import CharLSTM, VariationalLSTM
 from .mlp import MLP
-from .pretrained import ELMoEmbedding, TransformerEmbedding
+from .pretrained import ELMoEmbedding, TransformerEmbedding, TransformerEmbedWithRelations
 from .transformer import (TransformerDecoder, TransformerEncoder,
-                          TransformerWordEmbedding,
-                          TransformerEmbedWithRelations)
+                          TransformerWordEmbedding)
 
 __all__ = [
     'Biaffine',
@@ -24,7 +23,7 @@ __all__ = [
     'ELMoEmbedding',
     'TransformerEmbedding',
     'TransformerWordEmbedding',
-    'TransformerEmbedWithRelations',
+    'TransformerEmbedWithRelations'
     'TransformerDecoder',
     'TransformerEncoder'
 ]
