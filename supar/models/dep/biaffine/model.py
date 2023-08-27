@@ -358,9 +358,7 @@ class BiaffineDependencyWAttentionsModel(Model):
         super().__init__(**Config().update(locals()))
         assert head_for_atten >= -1
         self.head_for_attention = head_for_atten;
-        self.hook_results = {}
         # register a hook for relations 
-        self.bert_embed.model.encoder.layer[atten_layer].attention.self.register_forward_hook(self.relations_hook)
         self.arc_mlp_d = MLP(n_in=self.args.n_encoder_hidden, n_out=n_arc_mlp, dropout=mlp_dropout)
         self.arc_mlp_h = MLP(n_in=self.args.n_encoder_hidden, n_out=n_arc_mlp, dropout=mlp_dropout)
         self.rel_mlp_d = MLP(n_in=self.args.n_encoder_hidden, n_out=n_rel_mlp, dropout=mlp_dropout)
@@ -370,10 +368,6 @@ class BiaffineDependencyWAttentionsModel(Model):
         self.rel_attn = BiaffineWithAttention(n_in=n_rel_mlp, n_out=n_rels, bias_x=True, bias_y=True)
         self.criterion = nn.CrossEntropyLoss()
 
-    def relations_hook(self, model, input, output):
-        self.hook_results['model'] = model
-        self.hook_results['input'] = input
-        self.hook_results['output'] = output
         
     def forward(self, words, feats=None):
         r"""
@@ -393,17 +387,14 @@ class BiaffineDependencyWAttentionsModel(Model):
                 scores of all possible labels on each arc.
         """
 
-        x = self.encode(words, feats)
+        x, attention_scores = self.encode(words, feats)
         mask = words.ne(self.args.pad_index) if len(words.shape) < 3 else words.ne(self.args.pad_index).any(-1)
 
         arc_d = self.arc_mlp_d(x)
         arc_h = self.arc_mlp_h(x)
         rel_d = self.rel_mlp_d(x)
         rel_h = self.rel_mlp_h(x)
-        # get query and key layer 
-        query_layer = self.hook_results['model'].transpose_for_scores(self.hook_results['model'].query(self.hook_results['input'][0]))
-        key_layer = self.hook_results['model'].transpose_for_scores(self.hook_results['model'].key(self.hook_results['input'][0]))
-        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+
         # compute raw attentions score
         if self.head_for_attention == -1:
             # mean over ehads 

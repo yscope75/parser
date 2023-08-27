@@ -7,7 +7,8 @@ from .lstm import CharLSTM, VariationalLSTM
 from .mlp import MLP
 from .pretrained import ELMoEmbedding, TransformerEmbedding
 from .transformer import (TransformerDecoder, TransformerEncoder,
-                          TransformerWordEmbedding)
+                          TransformerWordEmbedding,
+                          TransformerEmbedWithRelations)
 
 __all__ = [
     'Biaffine',
@@ -23,6 +24,7 @@ __all__ = [
     'ELMoEmbedding',
     'TransformerEmbedding',
     'TransformerWordEmbedding',
+    'TransformerEmbedWithRelations',
     'TransformerDecoder',
     'TransformerEncoder'
 ]

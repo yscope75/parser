@@ -7,7 +7,8 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from supar.config import Config
 from supar.modules import (CharLSTM, ELMoEmbedding, IndependentDropout,
                            SharedDropout, TransformerEmbedding,
-                           TransformerWordEmbedding, VariationalLSTM)
+                           TransformerWordEmbedding, VariationalLSTM,
+                           TransformerEmbedWithRelations)
 from supar.modules.transformer import (TransformerEncoder,
                                        TransformerEncoderLayer)
 
@@ -106,7 +107,7 @@ class Model(nn.Module):
                                               n_model=self.args.n_encoder_hidden)
             self.encoder_dropout = nn.Dropout(p=self.args.encoder_dropout)
         elif encoder == 'bert':
-            self.encoder = TransformerEmbedding(name=self.args.bert,
+            self.encoder = TransformerEmbedWithRelations(name=self.args.bert,
                                                 n_layers=self.args.n_bert_layers,
                                                 pooling=self.args.bert_pooling,
                                                 pad_index=self.args.pad_index,
@@ -175,7 +176,8 @@ class Model(nn.Module):
         elif self.args.encoder == 'transformer':
             x = self.encoder(self.embed(words, feats), words.ne(self.args.pad_index))
         else:
-            x = self.encoder(words)
+            x, attn_scores = self.encoder(words)
+            return self.encoder_dropout(x), attn_scores
         return self.encoder_dropout(x)
 
     def decode(self):
