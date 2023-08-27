@@ -266,7 +266,7 @@ class TransformerEmbedWithRelations(nn.Module):
         # get attention score for filling
         temp_att_mask = masked_attentions.ne(0)
         # expand mask to rationale for filling scores 
-        expand_mask = mask.repeat_interleave(torch.tensor([num_tokens*num_heads]*batch_size, device=mask.get_device()), dim=0).int()
+        expand_mask = mask.repeat_interleave(torch.tensor([num_tokens*num_heads]*batch_size, device=mask.get_device()), dim=0).byte()
         # fill attentions 
         filled_attn_scores = attention_scores.new_zeros(*expand_mask.shape).masked_scatter_(expand_mask,
                                                                                             masked_attentions[temp_att_mask])
@@ -282,7 +282,7 @@ class TransformerEmbedWithRelations(nn.Module):
         # expand dim 1 to hold the heads
         final_indices = final_indices[:, None, :]
         final_indices = final_indices.repeat_interleave(num_heads, dim=1) 
-        final_indices = final_indices[:, :, :, None].expand(batch_size, num_heads, num_tokens, num_tokens)
+        final_indices = final_indices[:, :, :, None].expand(batch_size, num_heads, mask.shape[1], mask.shape[1])
     
         # attentions score after removing irrelevant rows batch x heads x seq_len x seq_len 
         final_attn_scores = filled_attn_scores.gather(-2, final_indices)

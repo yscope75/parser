@@ -398,7 +398,7 @@ class BiaffineDependencyWAttentionsModel(Model):
         # compute raw attentions score
         if self.head_for_attention == -1:
             # mean over ehads 
-            attention_scores = torch.mean(attention_scores, dim=1)
+            attention_scores = torch.mean(attention_scores, dim=1, keepdim=True)
         else:
             attention_scores = attention_scores[:, self.head_for_attention, ...]
         # [batch_size, seq_len, seq_len]
