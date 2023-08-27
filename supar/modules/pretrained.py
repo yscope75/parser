@@ -266,7 +266,7 @@ class TransformerEmbedWithRelations(nn.Module):
         # get attention score for filling
         temp_att_mask = masked_attentions.ne(0)
         # expand mask to rationale for filling scores 
-        expand_mask = mask.repeat_interleave(torch.tensor([num_tokens*num_heads]*batch_size), dim=0).int()
+        expand_mask = mask.repeat_interleave(torch.tensor([num_tokens*num_heads]*batch_size, device=mask.get_device()), dim=0).int()
         # fill attentions 
         filled_attn_scores = attention_scores.new_zeros(*expand_mask.shape).masked_scatter_(expand_mask,
                                                                                             masked_attentions[temp_att_mask])
