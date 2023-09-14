@@ -205,7 +205,7 @@ class TransformerEmbedWithRelations(nn.Module):
             .transpose_for_scores(self.hook_results['model'] \
                 .key(self.hook_results['input'][0]))
             
-        return torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        return torch.matmul(query_layer, key_layer.transpose(-1, -2)).detach().clone()
             
     def __repr__(self):
         s = f"{self.name}, n_layers={self.n_layers}, n_out={self.n_out}, "
