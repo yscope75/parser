@@ -6,6 +6,7 @@ from typing import Callable, Optional
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from supar.modules.mlp import MLP
 
 
@@ -171,7 +172,8 @@ class BiaffineWithAttention(nn.Module):
         bias_x: bool = True,
         bias_y: bool = True,
         decompose: bool = False,
-        init: Callable = nn.init.zeros_
+        init: Callable = nn.init.zeros_,
+        max_seq_size = 158,
     ) -> Biaffine:
         super().__init__()
 
@@ -184,6 +186,7 @@ class BiaffineWithAttention(nn.Module):
         self.bias_y = bias_y
         self.decompose = decompose
         self.init = init
+        self.max_seq_size = max_seq_size
 
         if n_proj is not None:
             self.mlp_x, self.mlp_y = MLP(n_in, n_proj, dropout), MLP(n_in, n_proj, dropout)
@@ -194,6 +197,7 @@ class BiaffineWithAttention(nn.Module):
             self.weight = nn.ParameterList((nn.Parameter(torch.Tensor(n_out, self.n_model + bias_x)),
                                             nn.Parameter(torch.Tensor(n_out, self.n_model + bias_y))))
 
+        self.alpha_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
         self.reset_parameters()
 
     def __repr__(self):
@@ -252,7 +256,13 @@ class BiaffineWithAttention(nn.Module):
             wy = torch.einsum('byj,oj->boy', y, self.weight[1])
             s = torch.einsum('box,boy->boxy', wx, wy)
         else:
-            s = torch.einsum('bxi,oij,byj->boxy', x, self.weight, y) + attentions.repeat(1, self.n_out, 1, 1)
+            s = torch.einsum('bxi,oij,byj->boxy', x, self.weight, y) 
+        # pad s and attention scores
+        pad_len = self.max_seq_size - attentions.shape[-1]
+        pad_sides = (0, pad_len, pad_len, 0)
+        s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
+            F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
+        s = s[..., pad_len:, :-pad_len]
         return s.squeeze(1) / self.n_in ** self.scale
 
 class Triaffine(nn.Module):

@@ -261,6 +261,8 @@ class TransformerEmbedWithRelations(nn.Module):
         num_tokens = attention_scores.shape[-1]
         # mask raw attention scores batch x 1 x 1 x num_toks
         attention_mask = token_mask[:, None, None, :].float()
+        # filter out zero scores
+        attention_scores[attention_scores == 0] = -1e-9
         # keep the scores at none zero mask elements only
         masked_attentions = attention_scores*attention_mask
         # get attention score for filling
