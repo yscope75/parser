@@ -197,6 +197,7 @@ class BiaffineWithAttention(nn.Module):
             self.weight = nn.ParameterList((nn.Parameter(torch.Tensor(n_out, self.n_model + bias_x)),
                                             nn.Parameter(torch.Tensor(n_out, self.n_model + bias_y))))
 
+        # self.alpha_matrix = torch.ones((n_out, self.max_seq_size, self.max_seq_size), device=self.weight.device)
         self.alpha_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
         self.reset_parameters()
 

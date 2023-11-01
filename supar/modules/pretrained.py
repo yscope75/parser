@@ -163,7 +163,7 @@ class TransformerEmbedWithRelations(nn.Module):
         pooling: str = 'mean',
         pad_index: int = 0,
         mix_dropout: float = .0,
-        atten_layer: int = 5,
+        atten_layer: int = 3,
         finetune: bool = False
     ) -> TransformerEmbedding:
         super().__init__()
@@ -268,7 +268,7 @@ class TransformerEmbedWithRelations(nn.Module):
         # get attention score for filling
         temp_att_mask = masked_attentions.ne(0)
         # expand mask to rationale for filling scores 
-        expand_mask = mask.repeat_interleave(torch.tensor([num_tokens*num_heads]*batch_size, device=mask.get_device()), dim=0).byte()
+        expand_mask = mask.repeat_interleave(torch.tensor([num_tokens*num_heads]*batch_size, device=mask.get_device()), dim=0).bool()
         # fill attentions 
         filled_attn_scores = attention_scores.new_zeros(*expand_mask.shape).masked_scatter_(expand_mask,
                                                                                             masked_attentions[temp_att_mask])
