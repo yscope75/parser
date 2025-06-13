@@ -269,9 +269,10 @@ class BiaffineWithAttention(nn.Module):
         pad_len = self.max_seq_size - attentions.shape[-1]
         pad_sides = (0, pad_len, pad_len, 0)
         if self.mode == 'both' and not self.share_params:
+            inversed_attns = torch.transpose(attentions, 1, 2)
             s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
                 F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0)) + self.beta_matrix*(
-                    torch.transpose(F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0)), 1, 2)
+                    F.pad(inversed_attns.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
         else:
             s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
                 F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
