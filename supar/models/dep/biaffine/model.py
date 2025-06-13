@@ -368,8 +368,8 @@ class BiaffineDependencyWAttentionsModel(Model):
         self.rel_mlp_d = MLP(n_in=self.args.n_encoder_hidden, n_out=n_rel_mlp, dropout=mlp_dropout)
         self.rel_mlp_h = MLP(n_in=self.args.n_encoder_hidden, n_out=n_rel_mlp, dropout=mlp_dropout)
 
-        self.arc_attn = BiaffineWithAttention(n_in=n_arc_mlp, scale=scale, bias_x=True, bias_y=False)
-        self.rel_attn = BiaffineWithAttention(n_in=n_rel_mlp, n_out=n_rels, bias_x=True, bias_y=True)
+        self.arc_attn = BiaffineWithAttention(n_in=n_arc_mlp, scale=scale, bias_x=True, bias_y=False, mode=mode, share_params=share_params)
+        self.rel_attn = BiaffineWithAttention(n_in=n_rel_mlp, n_out=n_rels, bias_x=True, bias_y=True, mode=mode, share_params=share_params)
         self.criterion = nn.CrossEntropyLoss()
 
         
@@ -410,9 +410,9 @@ class BiaffineDependencyWAttentionsModel(Model):
         if self.share_params and self.mode == 'both':
             attention_scores += torch.transpose(attention_scores, 1, 2)
         # [batch_size, seq_len, seq_len]
-        s_arc = self.arc_attn(arc_d, arc_h, attention_scores, self.mode, self.share_params).masked_fill_(~mask.unsqueeze(1), MIN)
+        s_arc = self.arc_attn(arc_d, arc_h, attention_scores).masked_fill_(~mask.unsqueeze(1), MIN)
         # [batch_size, seq_len, seq_len, n_rels]
-        s_rel = self.rel_attn(rel_d, rel_h, attention_scores, self.mode, self.share_params).permute(0, 2, 3, 1)
+        s_rel = self.rel_attn(rel_d, rel_h, attention_scores).permute(0, 2, 3, 1)
 
         return s_arc, s_rel
 
