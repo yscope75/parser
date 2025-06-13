@@ -353,13 +353,15 @@ class BiaffineDependencyWAttentionsModel(Model):
                  pad_index=0,
                  unk_index=1,
                  atten_layer=5,
-                 head_for_atten=-1,
+                 head_for_atten=1,
                  mode='both',
+                 share_params=False,
                  **kwargs):
         super().__init__(**Config().update(locals()))
         assert head_for_atten >= -1
         self.head_for_attention = head_for_atten
         self.mode = mode
+        self.share_params = share_params
         # register a hook for relations 
         self.arc_mlp_d = MLP(n_in=self.args.n_encoder_hidden, n_out=n_arc_mlp, dropout=mlp_dropout)
         self.arc_mlp_h = MLP(n_in=self.args.n_encoder_hidden, n_out=n_arc_mlp, dropout=mlp_dropout)
@@ -405,12 +407,12 @@ class BiaffineDependencyWAttentionsModel(Model):
             attention_scores = attention_scores[:, self.head_for_attention, ...].unsqueeze(1)
             
         # mode: both direction or single direction
-        if self.mode == 'both':
+        if self.share_params and self.mode == 'both':
             attention_scores += torch.transpose(attention_scores, 1, 2)
         # [batch_size, seq_len, seq_len]
-        s_arc = self.arc_attn(arc_d, arc_h, attention_scores).masked_fill_(~mask.unsqueeze(1), MIN)
+        s_arc = self.arc_attn(arc_d, arc_h, attention_scores, self.mode, self.share_params).masked_fill_(~mask.unsqueeze(1), MIN)
         # [batch_size, seq_len, seq_len, n_rels]
-        s_rel = self.rel_attn(rel_d, rel_h, attention_scores).permute(0, 2, 3, 1)
+        s_rel = self.rel_attn(rel_d, rel_h, attention_scores, self.mode, self.share_params).permute(0, 2, 3, 1)
 
         return s_arc, s_rel
 

@@ -174,6 +174,8 @@ class BiaffineWithAttention(nn.Module):
         decompose: bool = False,
         init: Callable = nn.init.zeros_,
         max_seq_size = 158,
+        mode='both',
+        share_params=False,
     ) -> Biaffine:
         super().__init__()
 
@@ -187,6 +189,8 @@ class BiaffineWithAttention(nn.Module):
         self.decompose = decompose
         self.init = init
         self.max_seq_size = max_seq_size
+        self.mode = mode
+        self.share_params = share_params
 
         if n_proj is not None:
             self.mlp_x, self.mlp_y = MLP(n_in, n_proj, dropout), MLP(n_in, n_proj, dropout)
@@ -198,8 +202,10 @@ class BiaffineWithAttention(nn.Module):
                                             nn.Parameter(torch.Tensor(n_out, self.n_model + bias_y))))
 
         # self.alpha_matrix = torch.ones((n_out, self.max_seq_size, self.max_seq_size), device="cuda:0")
-        self.alpha_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
-        # self.alpha_matrix = nn.Parameter(nn.init.xavier_normal_(torch.empty(n_out, self.max_seq_size, self.max_seq_size)))
+        # self.alpha_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
+        self.alpha_matrix = nn.Parameter(nn.init.xavier_normal_(torch.empty(n_out, self.max_seq_size, self.max_seq_size)))
+        if not share_params and mode == 'both':
+            self.beta_matrix = nn.Parameter(nn.init.xavier_normal_(torch.empty(n_out, self.max_seq_size, self.max_seq_size)))
         self.reset_parameters()
 
     def __repr__(self):
@@ -262,8 +268,13 @@ class BiaffineWithAttention(nn.Module):
         # pad s and attention scores
         pad_len = self.max_seq_size - attentions.shape[-1]
         pad_sides = (0, pad_len, pad_len, 0)
-        s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
-            F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
+        if self.mode == 'both' and not self.share_params:
+            s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
+                F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0)) + self.beta_matrix*(
+                    torch.transpose(F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0)), 1, 2)
+        else:
+            s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
+                F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
         s = s[..., pad_len:, :-pad_len]
         return s.squeeze(1) / self.n_in ** self.scale
 
