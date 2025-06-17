@@ -408,7 +408,7 @@ class BiaffineDependencyWAttentionsModel(Model):
             
         # mode: both direction or single direction
         if self.share_params and self.mode == 'both':
-            attention_scores += torch.transpose(attention_scores, 1, 2)
+            attention_scores += torch.transpose(attention_scores, 2, 3)
         # [batch_size, seq_len, seq_len]
         s_arc = self.arc_attn(arc_d, arc_h, attention_scores).masked_fill_(~mask.unsqueeze(1), MIN)
         # [batch_size, seq_len, seq_len, n_rels]

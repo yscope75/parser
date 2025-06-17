@@ -15,7 +15,7 @@ import dill
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from torch.cuda.amp import GradScaler
+from torch.amp import GradScaler
 from torch.optim import Adam, AdamW, Optimizer
 from torch.optim.lr_scheduler import ExponentialLR, _LRScheduler
 
@@ -178,7 +178,7 @@ class Parser(object):
 
         self.optimizer = self.init_optimizer()
         self.scheduler = self.init_scheduler()
-        self.scaler = GradScaler(enabled=args.amp)
+        self.scaler = GradScaler('cuda', enabled=args.amp)
 
         if dist.is_initialized():
             self.model = DDP(module=self.model,
