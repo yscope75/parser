@@ -184,7 +184,7 @@ class Model(nn.Module):
         elif self.args.encoder == 'transformer':
             x = self.encoder(self.embed(words, feats), words.ne(self.args.pad_index))
         else:
-            if self.args.model_type == 'custom'
+            if self.args.model_type == 'custom':
                 x, attn_scores = self.encoder(words)
                 return self.encoder_dropout(x), attn_scores
             x = self.encoder(words)
