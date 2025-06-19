@@ -107,12 +107,20 @@ class Model(nn.Module):
                                               n_model=self.args.n_encoder_hidden)
             self.encoder_dropout = nn.Dropout(p=self.args.encoder_dropout)
         elif encoder == 'bert':
-            self.encoder = TransformerEmbedWithRelations(name=self.args.bert,
+            if self.args.model_type == 'baseline':
+                self.encoder = TransformerEmbedding(name=self.args.bert,
                                                 n_layers=self.args.n_bert_layers,
                                                 pooling=self.args.bert_pooling,
                                                 pad_index=self.args.pad_index,
                                                 mix_dropout=self.args.mix_dropout,
                                                 finetune=True)
+            else:
+                self.encoder = TransformerEmbedWithRelations(name=self.args.bert,
+                                                    n_layers=self.args.n_bert_layers,
+                                                    pooling=self.args.bert_pooling,
+                                                    pad_index=self.args.pad_index,
+                                                    mix_dropout=self.args.mix_dropout,
+                                                    finetune=True)
             self.encoder_dropout = nn.Dropout(p=self.args.encoder_dropout)
             self.args.n_encoder_hidden = self.encoder.n_out
 
@@ -176,8 +184,10 @@ class Model(nn.Module):
         elif self.args.encoder == 'transformer':
             x = self.encoder(self.embed(words, feats), words.ne(self.args.pad_index))
         else:
-            x, attn_scores = self.encoder(words)
-            return self.encoder_dropout(x), attn_scores
+            if self.args.model_type == 'custom'
+                x, attn_scores = self.encoder(words)
+                return self.encoder_dropout(x), attn_scores
+            x = self.encoder(words)
         return self.encoder_dropout(x)
 
     def decode(self):
