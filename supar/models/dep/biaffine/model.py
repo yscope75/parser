@@ -354,13 +354,13 @@ class BiaffineDependencyWAttentionsModel(Model):
                  unk_index=1,
                  atten_layer=5,
                  head_for_atten=1,
-                 mode='both',
+                 dir_mode='both',
                  share_params=False,
                  **kwargs):
         super().__init__(**Config().update(locals()))
         assert head_for_atten >= -1
         self.head_for_attention = head_for_atten
-        self.mode = mode
+        self.dir_mode = dir_mode
         self.share_params = share_params
         # register a hook for relations 
         self.arc_mlp_d = MLP(n_in=self.args.n_encoder_hidden, n_out=n_arc_mlp, dropout=mlp_dropout)
@@ -368,8 +368,8 @@ class BiaffineDependencyWAttentionsModel(Model):
         self.rel_mlp_d = MLP(n_in=self.args.n_encoder_hidden, n_out=n_rel_mlp, dropout=mlp_dropout)
         self.rel_mlp_h = MLP(n_in=self.args.n_encoder_hidden, n_out=n_rel_mlp, dropout=mlp_dropout)
 
-        self.arc_attn = BiaffineWithAttention(n_in=n_arc_mlp, scale=scale, bias_x=True, bias_y=False, mode=mode, share_params=share_params)
-        self.rel_attn = BiaffineWithAttention(n_in=n_rel_mlp, n_out=n_rels, bias_x=True, bias_y=True, mode=mode, share_params=share_params)
+        self.arc_attn = BiaffineWithAttention(n_in=n_arc_mlp, scale=scale, bias_x=True, bias_y=False, dir_mode=dir_mode, share_params=share_params)
+        self.rel_attn = BiaffineWithAttention(n_in=n_rel_mlp, n_out=n_rels, bias_x=True, bias_y=True, dir_mode=dir_mode, share_params=share_params)
         self.criterion = nn.CrossEntropyLoss()
 
         
@@ -407,7 +407,7 @@ class BiaffineDependencyWAttentionsModel(Model):
             attention_scores = attention_scores[:, self.head_for_attention, ...].unsqueeze(1)
             
         # mode: both direction or single direction
-        if self.share_params and self.mode == 'both':
+        if self.share_params and self.dir_mode == 'both':
             attention_scores += torch.transpose(attention_scores, 2, 3)
         # [batch_size, seq_len, seq_len]
         s_arc = self.arc_attn(arc_d, arc_h, attention_scores).masked_fill_(~mask.unsqueeze(1), MIN)

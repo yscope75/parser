@@ -174,7 +174,7 @@ class BiaffineWithAttention(nn.Module):
         decompose: bool = False,
         init: Callable = nn.init.zeros_,
         max_seq_size = 158,
-        mode='both',
+        dir_mode='both',
         share_params=False,
     ) -> Biaffine:
         super().__init__()
@@ -189,7 +189,7 @@ class BiaffineWithAttention(nn.Module):
         self.decompose = decompose
         self.init = init
         self.max_seq_size = max_seq_size
-        self.mode = mode
+        self.dir_mode = dir_mode
         self.share_params = share_params
 
         if n_proj is not None:
@@ -204,8 +204,9 @@ class BiaffineWithAttention(nn.Module):
         # self.alpha_matrix = torch.ones((n_out, self.max_seq_size, self.max_seq_size), device="cuda:0")
         self.alpha_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
         # self.alpha_matrix = nn.Parameter(nn.init.xavier_normal_(torch.empty(n_out, self.max_seq_size, self.max_seq_size)))
-        if not share_params and mode == 'both':
+        if not share_params and dir_mode == 'both':
             # self.beta_matrix = nn.Parameter(nn.init.xavier_normal_(torch.empty(n_out, self.max_seq_size, self.max_seq_size)))
+            # self.beta_matrix = torch.ones((n_out, self.max_seq_size, self.max_seq_size), device="cuda:0")
             self.beta_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
         self.reset_parameters()
 
@@ -269,7 +270,7 @@ class BiaffineWithAttention(nn.Module):
         # pad s and attention scores
         pad_len = self.max_seq_size - attentions.shape[-1]
         pad_sides = (0, pad_len, pad_len, 0)
-        if self.mode == 'both' and not self.share_params:
+        if self.dir_mode == 'both' and not self.share_params:
             inversed_attns = torch.transpose(attentions, 2, 3)
             s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
                 F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0)) + self.beta_matrix*(
