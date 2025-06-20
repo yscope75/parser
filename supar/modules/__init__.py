@@ -5,7 +5,7 @@ from .dropout import IndependentDropout, SharedDropout, TokenDropout
 from .gnn import GraphConvolutionalNetwork
 from .lstm import CharLSTM, VariationalLSTM
 from .mlp import MLP
-from .pretrained import ELMoEmbedding, TransformerEmbedding, TransformerEmbedWithRelations
+from .pretrained import ELMoEmbedding, TransformerEmbedding, TransformerEmbedWithRelations, ScalarMix
 from .transformer import (TransformerDecoder, TransformerEncoder,
                           TransformerWordEmbedding)
 
@@ -25,5 +25,6 @@ __all__ = [
     'TransformerWordEmbedding',
     'TransformerEmbedWithRelations'
     'TransformerDecoder',
-    'TransformerEncoder'
+    'TransformerEncoder',
+    'ScalarMix'
 ]
