@@ -405,7 +405,8 @@ class BiaffineDependencyWAttentionsModel(Model):
         if self.head_for_attention == -1:
             # mean over ehads 
             # attention_scores = torch.mean(attention_scores, dim=1, keepdim=True)
-            x = self.scalar_mix([attention_scores[:, i, ...] for i in range(attention_scores.shape[1])])
+            attention_scores = self.scalar_mix([attention_scores[:, i, ...] for i in range(attention_scores.shape[1])])
+            
         else:
             attention_scores = attention_scores[:, self.head_for_attention, ...].unsqueeze(1)
             
