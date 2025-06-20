@@ -187,6 +187,7 @@ class TransformerEmbedWithRelations(nn.Module):
         self.max_len = int(max(0, self.model.config.max_position_embeddings) or 1e12) - 2
         self.stride = min(stride, self.max_len)
         self.hook_results = {}
+        self.atten_layer = atten_layer
         
         self.model.encoder.layer[atten_layer].attention.self.register_forward_hook(self.relations_hook)
         self.scalar_mix = ScalarMix(self.n_layers, mix_dropout)
@@ -233,14 +234,18 @@ class TransformerEmbedWithRelations(nn.Module):
         token_mask = pad(mask[mask].split(lens.tolist()), 0, padding_side=self.tokenizer.padding_side)
 
         # return the hidden states of all layers
-        x = self.model(tokens[:, :self.max_len], attention_mask=token_mask[:, :self.max_len].float())[-1]
+        bert_output = self.model(tokens[:, :self.max_len], attention_mask=token_mask[:, :self.max_len].float(), output_attentions=True)
+        x = bert_output[-2]
+        # x = self.model(tokens[:, :self.max_len], attention_mask=token_mask[:, :self.max_len].float())[-1]
         # get raw attention score from inputs [batch_size, n_heads, n_subwords, n_subwords]
         # todo: remember to devide by d_k
-        attention_scores = self.get_raw_attentions() / math.sqrt(self.hook_results['model'].attention_head_size)
+        # attention_scores = self.get_raw_attentions() / math.sqrt(self.hook_results['model'].attention_head_size)
+        attention_scores = bert_output[-1][self.atten_layer]
         # [batch_size, max_len, hidden_size]
         x = self.scalar_mix(x[-self.n_layers:])
         # [batch_size, n_subwords, hidden_size]
         for i in range(self.stride, (tokens.shape[1]-self.max_len+self.stride-1)//self.stride*self.stride+1, self.stride):
+            print("oversize")
             part = self.model(tokens[:, i:i+self.max_len], attention_mask=token_mask[:, i:i+self.max_len].float())[-1]
             part_attentions = self.get_raw_attentions() / math.sqrt(self.hook_results['model'].attention_head_size)
             # pad inexistent relations
