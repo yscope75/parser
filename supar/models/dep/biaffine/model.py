@@ -5,7 +5,7 @@ import torch.nn as nn
 from supar.config import Config
 from supar.model import Model
 from supar.models.dep.biaffine.transform import CoNLL
-from supar.modules import MLP, Biaffine, BiaffineWithAttention
+from supar.modules import MLP, Biaffine, BiaffineWithAttention, ScalarMix
 from supar.structs import DependencyCRF, MatrixTree
 from supar.utils.common import MIN
 
@@ -362,6 +362,8 @@ class BiaffineDependencyWAttentionsModel(Model):
         self.head_for_attention = head_for_atten
         self.dir_mode = dir_mode
         self.share_params = share_params
+        # scala mix for attention heads
+        self.scalar_mix = ScalarMix(12, mix_dropout)
         # register a hook for relations 
         self.arc_mlp_d = MLP(n_in=self.args.n_encoder_hidden, n_out=n_arc_mlp, dropout=mlp_dropout)
         self.arc_mlp_h = MLP(n_in=self.args.n_encoder_hidden, n_out=n_arc_mlp, dropout=mlp_dropout)
@@ -402,7 +404,8 @@ class BiaffineDependencyWAttentionsModel(Model):
         # compute raw attentions score
         if self.head_for_attention == -1:
             # mean over ehads 
-            attention_scores = torch.mean(attention_scores, dim=1, keepdim=True)
+            # attention_scores = torch.mean(attention_scores, dim=1, keepdim=True)
+            x = self.scalar_mix([attention_scores[:, i, ...] for i in range(attention_scores.shape[1])])
         else:
             attention_scores = attention_scores[:, self.head_for_attention, ...].unsqueeze(1)
             
