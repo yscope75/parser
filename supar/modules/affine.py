@@ -194,6 +194,8 @@ class BiaffineWithAttention(nn.Module):
 
         if n_proj is not None:
             self.mlp_x, self.mlp_y = MLP(n_in, n_proj, dropout), MLP(n_in, n_proj, dropout)
+            # try encoding raw attention scores
+            self.attn_row, self.attn_col = MLP(max_seq_size, n_proj, dropout), MLP(max_seq_size, n_proj, dropout)
         self.n_model = n_proj or n_in
         if not decompose:
             self.weight = nn.Parameter(torch.Tensor(n_out, self.n_model + bias_x, self.n_model + bias_y))
@@ -202,12 +204,12 @@ class BiaffineWithAttention(nn.Module):
                                             nn.Parameter(torch.Tensor(n_out, self.n_model + bias_y))))
 
         # self.alpha_matrix = torch.ones((n_out, self.max_seq_size, self.max_seq_size), device="cuda:0")
-        self.alpha_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
+        #self.alpha_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
         # self.alpha_matrix = nn.Parameter(nn.init.xavier_normal_(torch.empty(n_out, self.max_seq_size, self.max_seq_size)))
-        if not share_params and dir_mode == 'both':
+        # if not share_params and dir_mode == 'both':
             # self.beta_matrix = nn.Parameter(nn.init.xavier_normal_(torch.empty(n_out, self.max_seq_size, self.max_seq_size)))
             # self.beta_matrix = torch.ones((n_out, self.max_seq_size, self.max_seq_size), device="cuda:0")
-            self.beta_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
+            # self.beta_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
         self.reset_parameters()
 
     def __repr__(self):
@@ -256,6 +258,13 @@ class BiaffineWithAttention(nn.Module):
 
         if hasattr(self, 'mlp_x'):
             x, y = self.mlp_x(x), self.mlp_y(y)
+            # pad attentions
+            pad_len = self.max_seq_size - attentions.shape[-1]
+            pad_sides = (0, pad_len, pad_len, 0)
+            F.pad(attentions.repeat(1, 1, 1, 1), pad_sides, "constant", 0)
+            # project and integrate attention scores
+            x += self.mlp(attentions)
+            y += self.mlp(torch.transpose(attentions, 2, 3))
         if self.bias_x:
             x = torch.cat((x, torch.ones_like(x[..., :1])), -1)
         if self.bias_y:
@@ -268,17 +277,17 @@ class BiaffineWithAttention(nn.Module):
         else:
             s = torch.einsum('bxi,oij,byj->boxy', x, self.weight, y) 
         # pad s and attention scores
-        pad_len = self.max_seq_size - attentions.shape[-1]
-        pad_sides = (0, pad_len, pad_len, 0)
-        if self.dir_mode == 'both' and not self.share_params:
-            inversed_attns = torch.transpose(attentions, 2, 3)
-            s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
-                F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0)) + self.beta_matrix*(
-                    F.pad(inversed_attns.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
-        else:
-            s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
-                F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
-        s = s[..., pad_len:, :-pad_len]
+        # pad_len = self.max_seq_size - attentions.shape[-1]
+        # pad_sides = (0, pad_len, pad_len, 0)
+        # if self.dir_mode == 'both' and not self.share_params:
+        #     inversed_attns = torch.transpose(attentions, 2, 3)
+        #     s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
+        #         F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0)) + self.beta_matrix*(
+        #             F.pad(inversed_attns.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
+        # else:
+        #     s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
+        #         F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
+        # s = s[..., pad_len:, :-pad_len]
         return s.squeeze(1) / self.n_in ** self.scale
 
 class Triaffine(nn.Module):
