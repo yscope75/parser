@@ -274,10 +274,10 @@ class BiaffineWithAttention(nn.Module):
             
         if self.bias_x:
             x = torch.cat((x, torch.ones_like(x[..., :1])), -1)
-            attn_x = torch.cat((attn_x, torch.ones_like(x[..., :1])), -1)
+            attn_x = torch.cat((attn_x, torch.ones_like(attn_x[..., :1])), -1)
         if self.bias_y:
             y = torch.cat((y, torch.ones_like(y[..., :1])), -1)
-            attn_y = torch.cat((attn_y, torch.ones_like(y[..., :1])), -1)
+            attn_y = torch.cat((attn_y, torch.ones_like(attn_y[..., :1])), -1)
         # [batch_size, n_out, seq_len, seq_len]
         if self.decompose:
             wx = torch.einsum('bxi,oi->box', x, self.weight[0])
