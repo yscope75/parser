@@ -414,12 +414,16 @@ class BiaffineDependencyWAttentionsModel(Model):
         if self.share_params and self.dir_mode == 'both':
             attention_scores += torch.transpose(attention_scores, 2, 3)
         # [batch_size, seq_len, seq_len]
-        s_arc = self.arc_attn(arc_d, arc_h, attention_scores).masked_fill_(~mask.unsqueeze(1), MIN)
+        s_arc, attn_s_arc = self.arc_attn(arc_d, arc_h, attention_scores).masked_fill_(~mask.unsqueeze(1), MIN)
         # [batch_size, seq_len, seq_len, n_rels]
-        s_rel = self.rel_attn(rel_d, rel_h, attention_scores).permute(0, 2, 3, 1)
+        s_rel, attn_s_rel = self.rel_attn(rel_d, rel_h, attention_scores).permute(0, 2, 3, 1)
 
-        return s_arc, s_rel
+        return s_arc, s_rel, attn_s_arc, attn_s_rel
 
+    def loss_with_attn(self, s_arc, s_rel, arcs, rels, attn_s_arc, attn_s_rel, mask, partial=False):
+        return 0.5*self.loss(self, s_arc, s_rel, arcs, rels, mask, partial=False) + \
+            0.5*self.loss(self, attn_s_arc, attn_s_rel, arcs, rels, mask, partial=False)
+            
     def loss(self, s_arc, s_rel, arcs, rels, mask, partial=False):
         r"""
         Args:

@@ -202,7 +202,12 @@ class BiaffineWithAttention(nn.Module):
         else:
             self.weight = nn.ParameterList((nn.Parameter(torch.Tensor(n_out, self.n_model + bias_x)),
                                             nn.Parameter(torch.Tensor(n_out, self.n_model + bias_y))))
-
+        # weights for affine transform on attention scores
+        if not decompose:
+            self.attn_weight = nn.Parameter(torch.Tensor(n_out, self.n_model + bias_x, self.n_model + bias_y))
+        else:
+            self.attn_weight = nn.ParameterList((nn.Parameter(torch.Tensor(n_out, self.n_model + bias_x)),
+                                            nn.Parameter(torch.Tensor(n_out, self.n_model + bias_y))))
         # self.alpha_matrix = torch.ones((n_out, self.max_seq_size, self.max_seq_size), device="cuda:0")
         #self.alpha_matrix = nn.Parameter(torch.Tensor(n_out, self.max_seq_size, self.max_seq_size))
         # self.alpha_matrix = nn.Parameter(nn.init.xavier_normal_(torch.empty(n_out, self.max_seq_size, self.max_seq_size)))
@@ -263,19 +268,25 @@ class BiaffineWithAttention(nn.Module):
             pad_sides = (0, pad_len, pad_len, 0)
             F.pad(attentions.repeat(1, 1, 1, 1), pad_sides, "constant", 0)
             # project and integrate attention scores
-            x += self.attn_row(attentions)
-            y += self.attn_col(torch.transpose(attentions, 2, 3))
+            attn_x = self.attn_row(attentions)
+            attn_y = self.attn_col(torch.transpose(attentions, 2, 3))
         if self.bias_x:
             x = torch.cat((x, torch.ones_like(x[..., :1])), -1)
+            attn_x = torch.cat((x, torch.ones_like(x[..., :1])), -1)
         if self.bias_y:
             y = torch.cat((y, torch.ones_like(y[..., :1])), -1)
+            attn_y = torch.cat((y, torch.ones_like(y[..., :1])), -1)
         # [batch_size, n_out, seq_len, seq_len]
         if self.decompose:
             wx = torch.einsum('bxi,oi->box', x, self.weight[0])
             wy = torch.einsum('byj,oj->boy', y, self.weight[1])
             s = torch.einsum('box,boy->boxy', wx, wy)
+            attn_wx = torch.einsum('bxi,oi->box', attn_x, self.attn_weight[0])
+            attn_wy = torch.einsum('byj,oj->boy', attn_y, self.attn_weight[1])
+            attn_s = torch.einsum('box,boy->boxy', attn_wx, attn_wy)
         else:
             s = torch.einsum('bxi,oij,byj->boxy', x, self.weight, y) 
+            attn_s = torch.einsum('bxi,oij,byj->boxy', attn_wx, self.attn_weight, attn_wy) 
         # pad s and attention scores
         # pad_len = self.max_seq_size - attentions.shape[-1]
         # pad_sides = (0, pad_len, pad_len, 0)
@@ -288,7 +299,7 @@ class BiaffineWithAttention(nn.Module):
         #     s = F.pad(s, pad_sides, "constant", 0) + self.alpha_matrix*(
         #         F.pad(attentions.repeat(1, self.n_out, 1, 1), pad_sides, "constant", 0))
         # s = s[..., pad_len:, :-pad_len]
-        return s.squeeze(1) / self.n_in ** self.scale
+        return s.squeeze(1) / self.n_in ** self.scale, attn_s.squeeze(1) / self.n_in ** self.scale
 
 class Triaffine(nn.Module):
     r"""

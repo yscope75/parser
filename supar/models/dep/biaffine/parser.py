@@ -96,8 +96,10 @@ class BiaffineDependencyParser(Parser):
         mask = batch.mask
         # ignore the first token of each sentence
         mask[:, 0] = 0
-        s_arc, s_rel = self.model(words, feats)
-        loss = self.model.loss(s_arc, s_rel, arcs, rels, mask, self.args.partial)
+        # s_arc, s_rel = self.model(words, feats)
+        s_arc, s_rel, attn_s_arc, attn_s_rel = self.model(words, feats)
+        # loss = self.model.loss(s_arc, s_rel, arcs, rels, mask, self.args.partial)
+        loss = self.model.loss_with_attn(s_arc, s_rel, arcs, rels, attn_s_arc, attn_s_rel, mask, self.args.partial)
         return loss
 
     @torch.no_grad()
