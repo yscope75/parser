@@ -264,9 +264,11 @@ class BiaffineWithAttention(nn.Module):
         # pad attentions
         pad_len = self.max_seq_size - attentions.shape[-1]
         transposed_attns = torch.transpose(attentions, 1, 2)
-        pad_sides = (0, pad_len, pad_len, 0)
+        pad_sides = (0, pad_len, 0, 0)
         attentions = F.pad(attentions, pad_sides, "constant", 0)
+        transposed_attns = F.pad(transposed_attns, pad_sides, "constant", 0)
         attentions = attentions.squeeze(1)
+        transposed_attns = transposed_attns.squeeze(1)
         # project and integrate attention scores
         attn_x = self.attn_row(attentions)
         attn_y = self.attn_col(transposed_attns)
