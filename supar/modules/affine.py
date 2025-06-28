@@ -194,9 +194,10 @@ class BiaffineWithAttention(nn.Module):
 
         if n_proj is not None:
             self.mlp_x, self.mlp_y = MLP(n_in, n_proj, dropout), MLP(n_in, n_proj, dropout)
-            # try encoding raw attention scores
-            self.attn_row, self.attn_col = MLP(max_seq_size, n_proj, dropout), MLP(max_seq_size, n_proj, dropout)
+            
         self.n_model = n_proj or n_in
+        # try encoding raw attention scores
+        self.attn_row, self.attn_col = MLP(max_seq_size, self.n_model, dropout), MLP(max_seq_size, self.n_model, dropout)
         if not decompose:
             self.weight = nn.Parameter(torch.Tensor(n_out, self.n_model + bias_x, self.n_model + bias_y))
         else:
