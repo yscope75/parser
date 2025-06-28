@@ -237,7 +237,7 @@ class TransformerEmbedWithRelations(nn.Module):
         # get raw attention score from inputs [batch_size, n_heads, n_subwords, n_subwords]
         # todo: remember to devide by d_k
         attention_scores = self.get_raw_attentions() / math.sqrt(self.hook_results['model'].attention_head_size)
-        attention_scores = nn.functional.softmax(attention_scores, dim=-1)
+        # attention_scores = nn.functional.softmax(attention_scores, dim=-1)
         # [batch_size, max_len, hidden_size]
         x = self.scalar_mix(x[-self.n_layers:])
         # [batch_size, n_subwords, hidden_size]

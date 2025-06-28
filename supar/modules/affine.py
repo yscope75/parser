@@ -264,7 +264,7 @@ class BiaffineWithAttention(nn.Module):
         # pad attentions
         pad_len = self.max_seq_size - attentions.shape[-1]
         pad_sides = (0, pad_len, pad_len, 0)
-        F.pad(attentions, pad_sides, "constant", 0)
+        attentions = F.pad(attentions, pad_sides, "constant", 0)
         # project and integrate attention scores
         attn_x = self.attn_row(attentions)
         attn_y = self.attn_col(torch.transpose(attentions, 2, 3))
@@ -274,10 +274,10 @@ class BiaffineWithAttention(nn.Module):
             
         if self.bias_x:
             x = torch.cat((x, torch.ones_like(x[..., :1])), -1)
-            attn_x = torch.cat((x, torch.ones_like(x[..., :1])), -1)
+            attn_x = torch.cat((attn_x, torch.ones_like(x[..., :1])), -1)
         if self.bias_y:
             y = torch.cat((y, torch.ones_like(y[..., :1])), -1)
-            attn_y = torch.cat((y, torch.ones_like(y[..., :1])), -1)
+            attn_y = torch.cat((attn_y, torch.ones_like(y[..., :1])), -1)
         # [batch_size, n_out, seq_len, seq_len]
         if self.decompose:
             wx = torch.einsum('bxi,oi->box', x, self.weight[0])
