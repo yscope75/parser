@@ -418,7 +418,7 @@ class BiaffineDependencyWAttentionsModel(Model):
         s_arc = s_arc.masked_fill_(~mask.unsqueeze(1), MIN)
         attn_s_arc = attn_s_arc.masked_fill_(~mask.unsqueeze(1), MIN)
         # [batch_size, seq_len, seq_len, n_rels]
-        s_rel, attn_s_rel = self.rel_attn(rel_d, rel_h, attention_scores).permute(0, 2, 3, 1)
+        s_rel, attn_s_rel = self.rel_attn(rel_d, rel_h, attention_scores)
         s_rel = s_rel.permute(0, 2, 3, 1)
         attn_s_rel = attn_s_rel.permute(0, 2, 3, 1)
         
