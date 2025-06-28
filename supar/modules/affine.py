@@ -260,16 +260,17 @@ class BiaffineWithAttention(nn.Module):
                 A scoring tensor of shape ``[batch_size, n_out, seq_len, seq_len]``.
                 If ``n_out=1``, the dimension for ``n_out`` will be squeezed automatically.
         """
-
+        # pad attentions
+        pad_len = self.max_seq_size - attentions.shape[-1]
+        pad_sides = (0, pad_len, pad_len, 0)
+        F.pad(attentions.repeat, pad_sides, "constant", 0)
+        # project and integrate attention scores
+        attn_x = self.attn_row(attentions)
+        attn_y = self.attn_col(torch.transpose(attentions, 2, 3))
+        
         if hasattr(self, 'mlp_x'):
             x, y = self.mlp_x(x), self.mlp_y(y)
-            # pad attentions
-            pad_len = self.max_seq_size - attentions.shape[-1]
-            pad_sides = (0, pad_len, pad_len, 0)
-            F.pad(attentions.repeat(1, 1, 1, 1), pad_sides, "constant", 0)
-            # project and integrate attention scores
-            attn_x = self.attn_row(attentions)
-            attn_y = self.attn_col(torch.transpose(attentions, 2, 3))
+            
         if self.bias_x:
             x = torch.cat((x, torch.ones_like(x[..., :1])), -1)
             attn_x = torch.cat((x, torch.ones_like(x[..., :1])), -1)
