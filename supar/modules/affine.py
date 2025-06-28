@@ -263,7 +263,7 @@ class BiaffineWithAttention(nn.Module):
         """
         # pad attentions
         pad_len = self.max_seq_size - attentions.shape[-1]
-        transposed_attns = torch.transpose(attentions, 1, 2)
+        transposed_attns = torch.transpose(attentions, 2, 3)
         pad_sides = (0, pad_len, 0, 0)
         attentions = F.pad(attentions, pad_sides, "constant", 0)
         transposed_attns = F.pad(transposed_attns, pad_sides, "constant", 0)
