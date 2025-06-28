@@ -425,8 +425,8 @@ class BiaffineDependencyWAttentionsModel(Model):
         return s_arc, s_rel, attn_s_arc, attn_s_rel
 
     def loss_with_attn(self, s_arc, s_rel, arcs, rels, attn_s_arc, attn_s_rel, mask, partial=False):
-        return 0.5*self.loss(self, s_arc, s_rel, arcs, rels, mask, partial=False) + \
-            0.5*self.loss(self, attn_s_arc, attn_s_rel, arcs, rels, mask, partial=False)
+        return 0.5*self.loss(self, s_arc, s_rel, arcs, rels, mask, partial) + \
+            0.5*self.loss(self, attn_s_arc, attn_s_rel, arcs, rels, mask, partial)
             
     def loss(self, s_arc, s_rel, arcs, rels, mask, partial=False):
         r"""
