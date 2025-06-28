@@ -268,7 +268,7 @@ class BiaffineWithAttention(nn.Module):
         attentions = attentions.squeeze(1)
         # project and integrate attention scores
         attn_x = self.attn_row(attentions)
-        attn_y = self.attn_col(torch.transpose(attentions, 2, 3))
+        attn_y = self.attn_col(torch.transpose(attentions, 1, 2))
         
         if hasattr(self, 'mlp_x'):
             x, y = self.mlp_x(x), self.mlp_y(y)
