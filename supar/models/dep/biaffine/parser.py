@@ -112,7 +112,7 @@ class BiaffineDependencyParser(Parser):
         s_arc, s_rel, attn_s_arc, attn_s_rel = self.model(words, feats)
         # loss = self.model.loss(s_arc, s_rel, arcs, rels, mask, self.args.partial)
         loss = self.model.loss_with_attn(s_arc, s_rel, arcs, rels, attn_s_arc, attn_s_rel, mask, self.args.partial)
-        arc_preds, rel_preds = self.model.decode(s_arc, s_rel, mask, self.args.tree, self.args.proj)
+        arc_preds, rel_preds = self.model.decode_w_attentions(s_arc, s_rel, attn_s_arc, attn_s_rel, mask, self.args.tree, self.args.proj)
         if self.args.partial:
             mask &= arcs.ge(0)
         # ignore all punctuation if not specified

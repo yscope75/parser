@@ -486,3 +486,33 @@ class BiaffineDependencyWAttentionsModel(Model):
         rel_preds = s_rel.argmax(-1).gather(-1, arc_preds.unsqueeze(-1)).squeeze(-1)
 
         return arc_preds, rel_preds
+    
+    def decode_w_attentions(self, s_arc, s_rel, attn_s_arc, attn_s_rel, mask, tree=False, proj=False):
+        r"""
+        Args:
+            s_arc (~torch.Tensor): ``[batch_size, seq_len, seq_len]``.
+                Scores of all possible arcs.
+            s_rel (~torch.Tensor): ``[batch_size, seq_len, seq_len, n_labels]``.
+                Scores of all possible labels on each arc.
+            mask (~torch.BoolTensor): ``[batch_size, seq_len]``.
+                The mask for covering the unpadded tokens.
+            tree (bool):
+                If ``True``, ensures to output well-formed trees. Default: ``False``.
+            proj (bool):
+                If ``True``, ensures to output projective trees. Default: ``False``.
+
+        Returns:
+            ~torch.LongTensor, ~torch.LongTensor:
+                Predicted arcs and labels of shape ``[batch_size, seq_len]``.
+        """
+
+        lens = mask.sum(1)
+        s_arc = 0.8*s_arc + 0.2*attn_s_arc
+        s_rel = 0.8*s_rel + 0.2*attn_s_rel
+        arc_preds = s_arc.argmax(-1)
+        bad = [not CoNLL.istree(seq[1:i+1], proj) for i, seq in zip(lens.tolist(), arc_preds.tolist())]
+        if tree and any(bad):
+            arc_preds[bad] = (DependencyCRF if proj else MatrixTree)(s_arc[bad], mask[bad].sum(-1)).argmax
+        rel_preds = s_rel.argmax(-1).gather(-1, arc_preds.unsqueeze(-1)).squeeze(-1)
+
+        return arc_preds, rel_preds
