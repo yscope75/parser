@@ -286,7 +286,7 @@ class BiaffineWithAttention(nn.Module):
             attn_s = torch.einsum('box,boy->boxy', attn_wx, attn_wy)
         else:
             s = torch.einsum('bxi,oij,byj->boxy', x, self.weight, y) 
-            attn_s = torch.einsum('bxi,oij,byj->boxy', attn_wx, self.attn_weight, attn_wy) 
+            attn_s = torch.einsum('bxi,oij,byj->boxy', attn_x, self.attn_weight, attn_y) 
         # pad s and attention scores
         # pad_len = self.max_seq_size - attentions.shape[-1]
         # pad_sides = (0, pad_len, pad_len, 0)
