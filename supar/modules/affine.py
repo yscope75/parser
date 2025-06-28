@@ -263,8 +263,8 @@ class BiaffineWithAttention(nn.Module):
             pad_sides = (0, pad_len, pad_len, 0)
             F.pad(attentions.repeat(1, 1, 1, 1), pad_sides, "constant", 0)
             # project and integrate attention scores
-            x += self.mlp(attentions)
-            y += self.mlp(torch.transpose(attentions, 2, 3))
+            x += self.attn_row(attentions)
+            y += self.attn_col(torch.transpose(attentions, 2, 3))
         if self.bias_x:
             x = torch.cat((x, torch.ones_like(x[..., :1])), -1)
         if self.bias_y:
